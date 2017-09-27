@@ -72,6 +72,7 @@
     <string name="title_activity_map">MapActivity</string>
 
     <string name="avatarString"> change picture </string>
+    <string name="title_activity_search">SearchActivity</string>
 
 
 </resources>

@@ -42,7 +42,6 @@
             android:id="@+id/hunter_icon"
             android:layout_width="75dp"
             android:layout_height="50dp"
-            android:src="@drawable/hunter"
             tools:layout_editor_absoluteY="0dp"
             tools:layout_editor_absoluteX="0dp"
             android:layout_marginRight="8dp" />
