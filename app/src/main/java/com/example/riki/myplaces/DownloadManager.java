@@ -290,7 +290,7 @@ public class DownloadManager {
         t.start();
     }
 
-    public void addLocation(final float latitude, final float longitude, final boolean inSafeZone, final String apiToken)
+    public void addLocation(final double latitude, final double longitude, final String apiToken)
     {
         Thread t = new Thread(new Runnable() {
             @Override
@@ -368,6 +368,50 @@ public class DownloadManager {
                 }
                 catch (IOException e)
                 {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
+    public void getUserWifis(final String apiToken)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/user/wifi")
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
+    public void getAllWifis(final String apiToken)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/wifi")
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }

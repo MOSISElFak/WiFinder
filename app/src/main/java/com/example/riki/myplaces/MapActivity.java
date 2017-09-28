@@ -5,7 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -16,14 +17,13 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -36,9 +36,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.Random;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, IThreadWakeUp {
 
@@ -47,7 +48,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     LocationManager locationManager;
 
     private boolean selCoorsEnabled = false;
-    private FloatingActionButton selectSafeZone;
+    private FloatingActionButton addWifi;
     private int state = 0;
     private int timer = 0;
     private HashMap<Marker, Integer> markerPlaceIdMap;
@@ -55,6 +56,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private int safeZone;
     private int iterator;
     private Bitmap bmp;
+    private ArrayList<WiFi> wiFis;
+    private boolean loadedWifis = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,10 +90,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
-        timer++;
+
         LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 17.0f));
+
+        if (loadedWifis) {
+            map.clear();
+            addWiFis();
+            state = 2;
+            DownloadManager.getInstance().addLocation(location.getLatitude(), location.getLongitude(), apiKey);
+        }
+
     }
 
     @Override
@@ -110,102 +121,77 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     @Override
     public void ResponseOk(String s) {
-        if(s.isEmpty())
-        {
+        if (s.isEmpty()) {
             //nije dobio podatke, treba uraditi nesto
             //treba probati jos jednom da se pribave podaci, ako je doslo do greske, ponovo se poziva DownloadManager.getData
             //ako nije ni tada, onda treba nekako obezbediti da ne pukne aplikacija
             //ispisati poruku da je doslo do greske na serveru, to samo ako 2 puta ne dobijemo nista
             //promenljiva koja to obezbedjuje
-        }
-        else
-        {
+        } else {
             String html = "<!DOCTYPE html>";
-            if(s.toLowerCase().contains(html.toLowerCase()))
-            {
+            if (s.toLowerCase().contains(html.toLowerCase())) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         //stuff that updates ui
                     }
                 });
-            }
-            else {
-                if(state == 1) {
-                    try {
-                        JSONArray friends = new JSONArray(s);
-                        markerPlaceIdMap = new HashMap<Marker, Integer>((int)((double)friends.length()*1.2));
-                        for(int i = 0; i < friends.length(); i++)
-                        {
-                            final JSONObject friend = friends.getJSONObject(i);
-                            try {
-                                if(!friend.getString("avatar").equals("default.jpg")) {
-                                    URL url = new URL("zmurke.herokuapp.com/" + friend.getString("avatar"));
-                                    bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                                }
-                                else
-                                    bmp = null;
-                                addMarker(friend, bmp);
-                            } catch (Exception e){
-                                e.printStackTrace();
-                            }
-                            Thread thread = new Thread(new Runnable(){
-                                @Override
-                                public void run(){
-                                    URL url ;
-                                    try {
-                                        url = new URL("https://zmurke.herokuapp.com" + friend.getString("avatar"));
-                                        bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                                        addMarker(friend, Bitmap.createScaledBitmap(bmp, 80, 80, false));
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
-                            thread.start();
+            } else {
+                if (state == 1) {
+                    try{
+                        JSONArray wifis = new JSONArray(s);
+                        wiFis = new ArrayList<WiFi>();
+                        for(int i = 0; i < wifis.length(); i++){
+                            final JSONObject wifi = wifis.getJSONObject(i);
+                            final LatLng position = new LatLng(wifi.getDouble("latitude"), wifi.getDouble("longitude"));
+                            Random rnd = new Random();
+                            WiFi wiFi = new WiFi(
+                                    wifi.getInt("id"),
+                                    wifi.getString("name"),
+                                    wifi.getString("password"),
+                                    wifi.getDouble("latitude"),
+                                    wifi.getDouble("longitude"),
+                                    wifi.getInt("created_by")
+                            );
+                            wiFis.add(wiFi);
                         }
-                        //addMyPlacesMarkers(friends);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                //stuff that updates ui
-                                map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-                                    @Override
-                                    public boolean onMarkerClick(Marker marker) {
-                                        return true;
-                                    }
-                                });
+                                addWiFis();
+                                loadedWifis = true;
                             }
                         });
-                    } catch (JSONException e) {
+                    } catch (Exception e){
                         e.printStackTrace();
                     }
                 }
 
-                if(state == 2 || state == 3){
-                    try{
-                        JSONObject safeZone = new JSONObject(s);
-                        final LatLng position = new LatLng(safeZone.getDouble("latitude"), safeZone.getDouble("longitude"));
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                map.clear();
-                                map.addCircle(new CircleOptions()
-                                        .center(position)
-                                        .radius(50)
-                                        .strokeWidth(0f)
-                                        .fillColor(Color.argb(50, 0, 200, 0)));
-                                final MarkerOptions markerOptions = new MarkerOptions();
-                                markerOptions.position(position);
-                                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.safehouse));
-                                markerOptions.title(getString(R.string.safe_zone_title));
-                                Marker marker = map.addMarker(markerOptions);
-                            }
-                        });
+                if (state == 2) {
+                    state = 3;
+                    DownloadManager.getInstance().getFriends(apiKey);
+                }
 
-                        state = 1;
-                        /*DownloadManager.getInstance().getFriendsLocation(apiKey);*/
-                    } catch (JSONException e){
+                if(state == 3){
+                    try {
+                        JSONArray friends = new JSONArray(s);
+                        for (int i = 0; i < friends.length(); i++) {
+                            final JSONObject friend = friends.getJSONObject(i);
+                            String lat = friend.getString("latitude");
+                            String lon = friend.getString("longitude");
+                            if (lat != null || lon != null) {
+                                Bitmap bmp;
+                                if (!friend.getString("avatar").equals("default.jpg")) {
+                                    URL url = new URL("https://wi-finder-server.herokuapp.com/" + friend.getString("avatar"));
+                                    bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                                    addMarker(friend, Bitmap.createScaledBitmap(bmp, 80, 80, false));
+                                } else {
+                                    bmp = null;
+                                    addMarker(friend, bmp);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -218,24 +204,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
 
-        if(!checkCurrentTimeOfDay()){
+        if (!checkCurrentTimeOfDay()) {
             MapStyleOptions style = MapStyleOptions.loadRawResourceStyle(this, R.raw.mapstyle_night);
             map.setMapStyle(style);
         }
 
         final CoordinatorLayout coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
 
-        selectSafeZone = (FloatingActionButton) findViewById(R.id.selectSafeZone);
-        if(safeZone != 0){
-            selectSafeZone.setVisibility(View.INVISIBLE);
-            state = 3;
-            /*DownloadManager.getInstance().getSafeZone(apiKey);*/
+        addWifi = (FloatingActionButton) findViewById(R.id.addWiFi);
+        if (safeZone != 0) {
+            addWifi.setVisibility(View.INVISIBLE);
         } else {
-            selectSafeZone.setOnClickListener(new View.OnClickListener() {
+            addWifi.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     selCoorsEnabled = true;
-                    selectSafeZone.setEnabled(false);
-                    selectSafeZone.setVisibility(View.INVISIBLE);
+                    addWifi.setEnabled(false);
+                    addWifi.setVisibility(View.INVISIBLE);
                     snackbar = Snackbar.make(coordinatorLayout, getString(R.string.safe_zone), Snackbar.LENGTH_INDEFINITE);
                     snackbar.show();
                 }
@@ -243,12 +227,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
 
 
-        map.setOnMapClickListener(new GoogleMap.OnMapClickListener(){
+        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
-            public void onMapClick(LatLng latLng){
-                if(selCoorsEnabled) {
+            public void onMapClick(LatLng latLng) {
+                if (selCoorsEnabled) {
                     double lon = latLng.longitude;
                     double lat = latLng.latitude;
+                    //addWifi.setVisibility(View.VISIBLE);
                     selCoorsEnabled = false;
                     snackbar.dismiss();
                     state = 3;
@@ -264,19 +249,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             map.setMyLocationEnabled(true);
             map.getUiSettings().setMyLocationButtonEnabled(true);
         } else {
-            ActivityCompat.requestPermissions(this, new String[] {
+            ActivityCompat.requestPermissions(this, new String[]{
                             android.Manifest.permission.ACCESS_FINE_LOCATION,
-                            android.Manifest.permission.ACCESS_COARSE_LOCATION },
+                            android.Manifest.permission.ACCESS_COARSE_LOCATION},
                     1
             );
             map.setMyLocationEnabled(true);
             map.getUiSettings().setMyLocationButtonEnabled(true);
         }
+
+        state = 1;
+        DownloadManager.getInstance().getUserWifis(apiKey);
     }
 
-    private void addMarker(JSONObject friend, Bitmap bmp){
+    private void addMarker(JSONObject friend, Bitmap bmp) {
 
-        try{
+        try {
             String lat = friend.getString("latitude");
             String lon = friend.getString("longitude");
             String name = friend.getString("name");
@@ -286,10 +274,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             LatLng loc = new LatLng(Double.parseDouble(lat), Double.parseDouble(lon));
             final MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(loc);
-            if(friend.getString("avatar").equals("default.jpg")){
+            if (friend.getString("avatar").equals("default.jpg")) {
                 markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.def));
-            }
-            else
+            } else
                 markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bmp));
             markerOptions.title(name);
 
@@ -299,23 +286,39 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 public void run() {
                     //stuff that updates ui
                     Marker marker = map.addMarker(markerOptions);
-                    markerPlaceIdMap.put(marker,iterator);
+                    markerPlaceIdMap.put(marker, iterator);
                     iterator++;
                 }
             });
-        }
-        catch (JSONException e){
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
     }
 
-    private boolean checkCurrentTimeOfDay()
-    {
+    private boolean checkCurrentTimeOfDay() {
         int currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY); //Current hour
         return currentHour < 18 && currentHour > 6;
     }
 
+    public void addWiFis() {
+        for (int i = 0; i < wiFis.size(); i++) {
+            LatLng position = new LatLng(wiFis.get(i).latitude, wiFis.get(i).longitude);
+            Random rnd = new Random();
+            map.addCircle(new CircleOptions()
+                    .center(position)
+                    .radius(50)
+                    .strokeWidth(0f)
+                    .fillColor(rnd.hashCode()));
+            final MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(position);
+            Drawable wifiPin = getResources().getDrawable(R.drawable.wifi_pin);
+            Bitmap bmp = ((BitmapDrawable) wifiPin).getBitmap();
+            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmp, 80, 80, false)));
+            markerOptions.title(wiFis.get(i).name);
+            map.addMarker(markerOptions);
+        }
+    }
 
 
 }

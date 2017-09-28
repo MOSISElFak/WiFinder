@@ -3,6 +3,8 @@ package com.example.riki.myplaces;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -23,10 +25,21 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Calendar;
+import java.util.HashMap;
 
 public class SearchActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, IThreadWakeUp {
 
@@ -47,6 +60,8 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         apiKey = intent.getExtras().getString("api");
+
+        DownloadManager.getInstance().setThreadWakeUp(this);
 
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -114,7 +129,45 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     @Override
     public void ResponseOk(String s) {
-
+        if (s.isEmpty()) {
+            //nije dobio podatke, treba uraditi nesto
+            //treba probati jos jednom da se pribave podaci, ako je doslo do greske, ponovo se poziva DownloadManager.getData
+            //ako nije ni tada, onda treba nekako obezbediti da ne pukne aplikacija
+            //ispisati poruku da je doslo do greske na serveru, to samo ako 2 puta ne dobijemo nista
+            //promenljiva koja to obezbedjuje
+        } else {
+            String html = "<!DOCTYPE html>";
+            if (s.toLowerCase().contains(html.toLowerCase())) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //stuff that updates ui
+                    }
+                });
+            } else {
+                try {
+                    JSONArray friends = new JSONArray(s);
+                    for (int i = 0; i < friends.length(); i++) {
+                        final JSONObject friend = friends.getJSONObject(i);
+                        String lat = friend.getString("latitude");
+                        String lon = friend.getString("longitude");
+                        if(lat != null || lon != null){
+                            Bitmap bmp;
+                            if (!friend.getString("avatar").equals("default.jpg")) {
+                                URL url = new URL("https://wi-finder-server.herokuapp.com/" + friend.getString("avatar"));
+                                bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                                addMarker(friend, Bitmap.createScaledBitmap(bmp, 80, 80, false));
+                            } else{
+                                bmp = null;
+                                addMarker(friend, bmp);
+                            }
+                        }
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @Override
@@ -149,6 +202,8 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             snackbarShown = true;
         }
 
+        DownloadManager.getInstance().getFriends(apiKey);
+
     }
 
     private boolean checkCurrentTimeOfDay() {
@@ -167,5 +222,37 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         float dist = (float) (earthRadius * c);
 
         return dist;
+    }
+
+    private void addMarker(JSONObject friend, Bitmap bmp) {
+
+        try {
+
+            String lat = friend.getString("latitude");
+            String lon = friend.getString("longitude");
+            String name = friend.getString("name");
+
+            LatLng loc = new LatLng(Double.parseDouble(lat), Double.parseDouble(lon));
+            final MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(loc);
+            if (friend.getString("avatar").equals("default.jpg")) {
+                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.def));
+            } else
+                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bmp));
+            markerOptions.title(name);
+
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //stuff that updates ui
+                    Marker marker = map.addMarker(markerOptions);
+
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 }
