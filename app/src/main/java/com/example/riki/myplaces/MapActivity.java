@@ -99,7 +99,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             map.clear();
             addWiFis();
             state = 2;
-            DownloadManager.getInstance().addLocation(location.getLatitude(), location.getLongitude(), apiKey);
+            DownloadManager.getInstance().locationFriends(apiKey, location.getLatitude(), location.getLongitude());
         }
 
     }
@@ -167,12 +167,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
                 }
 
-                if (state == 2) {
-                    state = 3;
-                    DownloadManager.getInstance().getFriends(apiKey);
-                }
-
-                if(state == 3){
+                if(state == 2 || state == 3){
                     try {
                         JSONArray friends = new JSONArray(s);
                         for (int i = 0; i < friends.length(); i++) {

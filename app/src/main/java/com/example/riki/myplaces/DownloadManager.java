@@ -262,6 +262,34 @@ public class DownloadManager {
         t.start();
     }
 
+    public void locationFriends(final String apiToken, final double latitude, final double longitude)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    RequestBody formBody = new FormBody.Builder()
+                            .add("latitude", String.valueOf(latitude))
+                            .add("longitude", String.valueOf(longitude))
+                            .build();
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/location_friends")
+                            .post(formBody)
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
+
     public void addFriend(final int friendId, final String apiToken)
     {
         Thread t = new Thread(new Runnable() {
@@ -397,6 +425,33 @@ public class DownloadManager {
         t.start();
     }
 
+    public void locationUserWifis(final String apiToken, final double latitude, final double longitude)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    RequestBody formBody = new FormBody.Builder()
+                            .add("latitude", String.valueOf(latitude))
+                            .add("longitude", String.valueOf(longitude))
+                            .build();
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/user/location_wifi")
+                            .post(formBody)
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
     public void getAllWifis(final String apiToken)
     {
         Thread t = new Thread(new Runnable() {
@@ -405,6 +460,33 @@ public class DownloadManager {
                 try {
                     Request request = new Request.Builder()
                             .url("https://wi-finder-server.herokuapp.com/api/wifi")
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
+    public void locationWifis(final String apiToken, final double latitude, final double longitude)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    RequestBody formBody = new FormBody.Builder()
+                            .add("latitude", String.valueOf(latitude))
+                            .add("longitude", String.valueOf(longitude))
+                            .build();
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/location_wifi")
+                            .post(formBody)
                             .addHeader("api", apiToken)
                             .build();
 
