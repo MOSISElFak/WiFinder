@@ -24,7 +24,7 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
 
     boolean clickEnabled;
     User user;
-
+    String ajdi;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,12 +89,9 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
 
             public void onClick(View v) {
                 v1.startAnimation(animation);
-               /* Intent map = new Intent(Main2Activity.this, MyPlacesMapActivity.class);
-                map.putExtra("state", MyPlacesMapActivity.SELECT_COORDINATES);
-                map.putExtra("api", apiKey);
-                map.putExtra("safe_zone", user.safeZone);
-                startActivityForResult(map,1);
-*/
+                Intent intent = new Intent(Main2Activity.this, HelpActivity.class);
+                intent.putExtra("api", apiKey);
+                startActivity(intent);
 
             }
         });
@@ -127,7 +124,10 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
 
             public void onClick(View v) {
                 v4.startAnimation(animation);
+                String a = String.valueOf(user.id);
                 Intent intent = new Intent(Main2Activity.this,RankingActivity.class);
+                intent.putExtra("api",apiKey);
+                intent.putExtra("id",ajdi);
                 startActivity(intent);
 
             }
@@ -139,7 +139,7 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
             public void onClick(View v) {
 
                 v5.startAnimation(animation);
-                Intent intent = new Intent(Main2Activity.this,FriendsActivity.class);
+                Intent intent = new Intent(Main2Activity.this,Friendz.class);
                 intent.putExtra("api", apiKey);
                 startActivity(intent);
             }

@@ -503,7 +503,7 @@ public class ProfileActivity extends AppCompatActivity implements IThreadWakeUp 
 
                                 if (urlImage != "null") {
                                     new DownloadImageTask((ImageView) findViewById(R.id.slika))
-                                            .execute("https://zmurke.herokuapp.com" + urlImage);
+                                            .execute("https://wi-finder-server.herokuapp.com" + urlImage);
 
                                    /* b = Base64.decode(imgBase64, Base64.DEFAULT);
                                     Bitmap decodedImage = BitmapFactory.decodeByteArray(b, 0, b.length);

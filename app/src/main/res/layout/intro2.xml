@@ -9,12 +9,14 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:weightSum="1">
 
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="@dimen/img_width_height"
-            android:src="@drawable/zmurke" />
+            android:src="@drawable/letterwifi"
+            android:layout_weight="1.33" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+
+    >
+
+    <ListPreference
+        android:title="Adding new wifi network"
+        android:summary="To add new wifi network go to\n Home> Map > Add wifi button and then choose place on the map"
+        android:key="language"
+        android:defaultValue="1"
+        android:entries="@array/listLanguages"
+        android:entryValues="@array/listLanguagesValues" />
+
+    <Preference
+        android:title="Discover new wifi networks"
+        android:summary="In order to discover new networks go to\n Home> Explore ">
+        <!--<intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.riki.myplaces"
+            android:targetClass="com.example.riki.myplaces.PasswordActivity"
+            />-->
+    </Preference>
+
+    <Preference
+        android:title="Add new friends"
+        android:summary="Connect with friends via Bluetooth\n Home> Friends > Add new friend button ">
+        <!--<intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.riki.myplaces"
+            android:targetClass="com.example.riki.myplaces.PasswordActivity"
+            />-->
+    </Preference>
+
+    <Preference
+        android:title="Change password"
+        android:summary="In order to change your password go to\n Home> Profile> Change password">
+        <!--<intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.riki.myplaces"
+            android:targetClass="com.example.riki.myplaces.PasswordActivity"
+            />-->
+    </Preference>
+
+
+
+    <Preference
+        android:title="Contact developers"
+        android:summary="Click here in order to email us">
+        <!--<intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.riki.myplaces"
+            android:targetClass="com.example.riki.myplaces"
+            />-->
+    </Preference>
+
+
+
+
+</PreferenceScreen>
