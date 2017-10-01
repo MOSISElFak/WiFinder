@@ -403,6 +403,46 @@ public class DownloadManager {
         t.start();
     }
 
+    public void addWifi(final String apiToken, final String name, final String password, final double latitude, final double longitude)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    RequestBody formBody = null;
+                    if (password != null) {
+                        formBody = new FormBody.Builder()
+                                .add("name", name)
+                                .add("password", password)
+                                .add("latitude", String.valueOf(latitude))
+                                .add("longitude", String.valueOf(longitude))
+                                .build();
+                    } else {
+                        formBody = new FormBody.Builder()
+                                .add("name", name)
+                                .add("latitude", String.valueOf(latitude))
+                                .add("longitude", String.valueOf(longitude))
+                                .build();
+                    }
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/wifi")
+                            .post(formBody)
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
     public void getUserWifis(final String apiToken)
     {
         Thread t = new Thread(new Runnable() {

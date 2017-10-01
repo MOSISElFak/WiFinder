@@ -1,15 +1,20 @@
 package com.example.riki.myplaces;
 
+import android.*;
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -43,6 +48,8 @@ import java.util.Random;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, IThreadWakeUp {
 
+    static final int ENTER_WIFI_DETAILS = 1;  // The request code
+
     GoogleMap map;
     Snackbar snackbar;
     LocationManager locationManager;
@@ -53,13 +60,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private int timer = 0;
     private HashMap<Marker, Integer> markerPlaceIdMap;
     private String apiKey;
-    private int safeZone;
     private int iterator;
     private Bitmap bmp;
     private ArrayList<WiFi> wiFis;
     private boolean loadedWifis = false;
+    private double selectedLatitude;
+    private double selecteLongitude;
 
     @Override
+    @TargetApi(Build.VERSION_CODES.M)
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
@@ -70,22 +79,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         apiKey = intent.getExtras().getString("api");
-        safeZone = intent.getExtras().getInt("safe_zone");
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    1);
         }
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 1, this);
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
     }
 
     @Override
@@ -138,10 +144,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 });
             } else {
                 if (state == 1) {
-                    try{
+                    try {
                         JSONArray wifis = new JSONArray(s);
                         wiFis = new ArrayList<WiFi>();
-                        for(int i = 0; i < wifis.length(); i++){
+                        for (int i = 0; i < wifis.length(); i++) {
                             final JSONObject wifi = wifis.getJSONObject(i);
                             final LatLng position = new LatLng(wifi.getDouble("latitude"), wifi.getDouble("longitude"));
                             Random rnd = new Random();
@@ -162,12 +168,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 loadedWifis = true;
                             }
                         });
-                    } catch (Exception e){
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
 
-                if(state == 2 || state == 3){
+                if (state == 2 || state == 3) {
                     try {
                         JSONArray friends = new JSONArray(s);
                         for (int i = 0; i < friends.length(); i++) {
@@ -191,6 +197,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
                 }
 
+                if (state == 4) {
+                    try {
+                        JSONObject wifi = new JSONObject(s);
+                        addWifiMarker(wifi);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
             }
         }
     }
@@ -207,32 +222,30 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         final CoordinatorLayout coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
 
         addWifi = (FloatingActionButton) findViewById(R.id.addWiFi);
-        if (safeZone != 0) {
-            addWifi.setVisibility(View.INVISIBLE);
-        } else {
-            addWifi.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    selCoorsEnabled = true;
-                    addWifi.setEnabled(false);
-                    addWifi.setVisibility(View.INVISIBLE);
-                    snackbar = Snackbar.make(coordinatorLayout, getString(R.string.safe_zone), Snackbar.LENGTH_INDEFINITE);
-                    snackbar.show();
-                }
-            });
-        }
+
+        addWifi.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                selCoorsEnabled = true;
+                addWifi.setEnabled(false);
+                addWifi.setVisibility(View.INVISIBLE);
+                snackbar = Snackbar.make(coordinatorLayout, getString(R.string.safe_zone), Snackbar.LENGTH_INDEFINITE);
+                snackbar.show();
+            }
+        });
 
 
         map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
                 if (selCoorsEnabled) {
-                    double lon = latLng.longitude;
-                    double lat = latLng.latitude;
-                    //addWifi.setVisibility(View.VISIBLE);
+                    selecteLongitude = latLng.longitude;
+                    selectedLatitude = latLng.latitude;
+                    addWifi.setVisibility(View.VISIBLE);
+                    addWifi.setEnabled(true);
                     selCoorsEnabled = false;
                     snackbar.dismiss();
-                    state = 3;
-                    /*DownloadManager.getInstance().createSafeZone(apiKey, lat, lon);*/
+                    Intent intent = new Intent(MapActivity.this, AddWifiActivity.class);
+                    startActivityForResult(intent, ENTER_WIFI_DETAILS);
                 }
             }
         });
@@ -257,6 +270,67 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         DownloadManager.getInstance().getUserWifis(apiKey);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Check which request we're responding to
+        if (requestCode == ENTER_WIFI_DETAILS) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                String name = data.getStringExtra("name");
+                if (data.hasExtra("password")) {
+                    String password = data.getStringExtra("password");
+                    state = 4;
+                    DownloadManager.getInstance().addWifi(apiKey, name, password, selectedLatitude, selecteLongitude);
+                } else {
+                    state = 4;
+                    DownloadManager.getInstance().addWifi(apiKey, name, null, selectedLatitude, selecteLongitude);
+                }
+            }
+        }
+    }
+
+    private void addWifiMarker(JSONObject wifi) {
+        try {
+            String lat = wifi.getString("latitude");
+            String lon = wifi.getString("longitude");
+            String name = wifi.getString("name");
+
+            WiFi wiFi = new WiFi(
+                wifi.getInt("id"),
+                    wifi.getString("name"),
+                    wifi.getString("password"),
+                    wifi.getDouble("latitude"),
+                    wifi.getDouble("longitude"),
+                    wifi.getInt("created_by")
+            );
+
+            wiFis.add(wiFi);
+
+            final LatLng loc = new LatLng(Double.parseDouble(lat), Double.parseDouble(lon));
+            final Random rnd = new Random();
+            final MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(loc);
+            Drawable wifiPin = getResources().getDrawable(R.drawable.wifi_pin);
+            Bitmap bmp = ((BitmapDrawable) wifiPin).getBitmap();
+            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmp, 75, 100, false)));
+            markerOptions.title(name);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //stuff that updates ui
+                    map.addCircle(new CircleOptions()
+                            .center(loc)
+                            .radius(50)
+                            .strokeWidth(0f)
+                            .fillColor(Color.argb(120, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))));
+                    map.addMarker(markerOptions);
+                }
+            });
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void addMarker(JSONObject friend, Bitmap bmp) {
 
         try {
@@ -266,25 +340,28 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             //Float distanceFromMarker = distanceBetween((float)myNewLat,(float)myNewLon,(float)marker.getPosition().latitude, (float)marker.getPosition().longitude);
 
-            LatLng loc = new LatLng(Double.parseDouble(lat), Double.parseDouble(lon));
-            final MarkerOptions markerOptions = new MarkerOptions();
-            markerOptions.position(loc);
-            if (friend.getString("avatar").equals("default.jpg")) {
-                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.def));
-            } else
-                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bmp));
-            markerOptions.title(name);
+            if (!lat.equals("null") && !lon.equals("null")) {
+                LatLng loc = new LatLng(Double.parseDouble(lat), Double.parseDouble(lon));
+                final MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(loc);
+                if (friend.getString("avatar").equals("default.jpg")) {
+                    markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.def));
+                } else
+                    markerOptions.icon(BitmapDescriptorFactory.fromBitmap(bmp));
+                markerOptions.title(name);
 
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    //stuff that updates ui
-                    Marker marker = map.addMarker(markerOptions);
-                    markerPlaceIdMap.put(marker, iterator);
-                    iterator++;
-                }
-            });
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        //stuff that updates ui
+                        Marker marker = map.addMarker(markerOptions);
+                        markerPlaceIdMap.put(marker, iterator);
+                        iterator++;
+                    }
+                });
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -304,12 +381,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     .center(position)
                     .radius(50)
                     .strokeWidth(0f)
-                    .fillColor(rnd.hashCode()));
+                    .fillColor(Color.argb(120, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))));
             final MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(position);
             Drawable wifiPin = getResources().getDrawable(R.drawable.wifi_pin);
             Bitmap bmp = ((BitmapDrawable) wifiPin).getBitmap();
-            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmp, 80, 80, false)));
+            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmp, 75, 100, false)));
             markerOptions.title(wiFis.get(i).name);
             map.addMarker(markerOptions);
         }
