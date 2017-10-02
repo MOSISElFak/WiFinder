@@ -124,10 +124,10 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
 
             public void onClick(View v) {
                 v4.startAnimation(animation);
-                String a = String.valueOf(user.id);
+                //String a = String.valueOf(user.id);
                 Intent intent = new Intent(Main2Activity.this,RankingActivity.class);
                 intent.putExtra("api",apiKey);
-                intent.putExtra("id",ajdi);
+                //intent.putExtra("id",ajdi);
                 startActivity(intent);
 
             }
