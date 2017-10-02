@@ -31,7 +31,7 @@ public class RankingActivity extends AppCompatActivity implements IThreadWakeUp 
         setContentView(R.layout.activity_rank);
         final Intent intent = getIntent();
         apiKey = intent.getExtras().getString("api");
-        idUser = intent.getExtras().getString("id");
+      //  idUser = intent.getExtras().getString("id");
         listNum.add("hihi");
 
         DownloadManager.getInstance().setThreadWakeUp(this);
