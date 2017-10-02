@@ -1,10 +1,10 @@
 package com.example.riki.myplaces;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -20,7 +20,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -41,14 +40,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 
 public class SearchActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, IThreadWakeUp, GoogleMap.OnMarkerClickListener {
 
@@ -63,10 +57,13 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
     private double currentLon;
     private boolean snackbarShown;
     private TextView points;
+    private FloatingActionButton backgroundServiceButton;
     private User user;
     private String apiKey;
     private int state;
     private ArrayList<WiFi> wiFis;
+    private boolean serviceEnabled = false;
+    private Intent backgroundService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +77,19 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         points = (TextView) findViewById(R.id.points);
         points.setText("Points: " + user.points);
+
+        backgroundServiceButton = (FloatingActionButton) findViewById(R.id.backgroundService);
+        backgroundServiceButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if(!serviceEnabled){
+                    serviceEnabled = true;
+                    Toast.makeText(SearchActivity.this, "Notifications enabled!", Toast.LENGTH_SHORT).show();
+                } else {
+                    serviceEnabled = false;
+                    Toast.makeText(SearchActivity.this, "Notifications disabled!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         DownloadManager.getInstance().setThreadWakeUp(this);
 
@@ -116,8 +126,6 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
     @Override
     public void onLocationChanged(Location location) {
-
-        map.clear();
         if(wiFis != null){
             wiFis.clear();
         }
@@ -136,6 +144,39 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         state = 1;
         DownloadManager.getInstance().locationWifis(apiKey, currentLat, currentLon);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        backgroundService = new Intent(SearchActivity.this, BackgroundService.class);
+        backgroundService.putExtra("api", apiKey);
+        backgroundService.putExtra("user", user);
+
+        if (!isMyServiceRunning(BackgroundService.class) && serviceEnabled) {
+            startService(backgroundService);
+        }
+
+        System.gc();
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
+        /*if(isMyServiceRunning(BackgroundService.class)) {
+            stopService(backgroundService);
+        }*/
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -193,6 +234,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                map.clear();
                                 addWiFis();
                                 /*state = 2;
                                 DownloadManager.getInstance().getFriends(apiKey);*/

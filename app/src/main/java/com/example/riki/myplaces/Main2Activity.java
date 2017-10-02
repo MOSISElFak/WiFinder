@@ -1,9 +1,12 @@
 package com.example.riki.myplaces;
 
+import android.*;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,7 +23,12 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
+
+    public static final int REQUEST_CODE_LOC = 10;
 
     boolean clickEnabled;
     User user;
@@ -76,9 +84,30 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
         v.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+
+
+                    int accessCoarseLocation = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+                    int accessFineLocation = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION);
+
+                    List<String> listRequestPermission = new ArrayList<String>();
+
+                    if (accessCoarseLocation != PackageManager.PERMISSION_GRANTED) {
+                        listRequestPermission.add(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+                    }
+                    if (accessFineLocation != PackageManager.PERMISSION_GRANTED) {
+                        listRequestPermission.add(android.Manifest.permission.ACCESS_FINE_LOCATION);
+                    }
+
+                    if (!listRequestPermission.isEmpty()) {
+                        String[] strRequestPermission = listRequestPermission.toArray(new String[listRequestPermission.size()]);
+                        requestPermissions(strRequestPermission, REQUEST_CODE_LOC);
+                    }
+                }
                 v.startAnimation(animation);
                 Intent intent = new Intent(Main2Activity.this, MapActivity.class);
                 intent.putExtra("api", apiKey);
+                intent.putExtra("user", user);
                 startActivity(intent);
 
             }
@@ -111,6 +140,24 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
         v3.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                    int accessCoarseLocation = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+                    int accessFineLocation = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION);
+
+                    List<String> listRequestPermission = new ArrayList<String>();
+
+                    if (accessCoarseLocation != PackageManager.PERMISSION_GRANTED) {
+                        listRequestPermission.add(android.Manifest.permission.ACCESS_COARSE_LOCATION);
+                    }
+                    if (accessFineLocation != PackageManager.PERMISSION_GRANTED) {
+                        listRequestPermission.add(android.Manifest.permission.ACCESS_FINE_LOCATION);
+                    }
+
+                    if (!listRequestPermission.isEmpty()) {
+                        String[] strRequestPermission = listRequestPermission.toArray(new String[listRequestPermission.size()]);
+                        requestPermissions(strRequestPermission, REQUEST_CODE_LOC);
+                    }
+                }
                 v3.startAnimation(animation);
                 Intent intent = new Intent(Main2Activity.this,SearchActivity.class);
                 intent.putExtra("api", apiKey);

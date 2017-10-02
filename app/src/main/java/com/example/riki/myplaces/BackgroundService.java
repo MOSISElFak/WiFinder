@@ -35,15 +35,16 @@ import org.json.JSONObject;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 
 public class BackgroundService extends Service implements LocationListener, IThreadWakeUp {
 
     private static final String TAG = "BackgroundService";
     private static final long TIME_BETWEEN_NOTIFICATIONS = 60L;
-    private static final int NOTIFY_DISTANCE = 30;
-    private static final int CATCH_DISTANCE = 5;
-    private static final int ADD_POINTS = 10;
+    private static final int NOTIFY_DISTANCE = 200;
 
     private static boolean serviceRunning;
 
@@ -56,15 +57,15 @@ public class BackgroundService extends Service implements LocationListener, IThr
 
     private String provider;
 
-    public static float currentLat;
-    public static float currentLon;
+    public static double currentLat;
+    public static double currentLon;
     public String apiKey;
-    public long miliseconds;
+    public User user;
     public static int myPoints = 0;
 
-    CountDownTimer countDownTimer;
-
     private Long timeLastNotification = 0L;
+
+    CountDownTimer countDownTimer;
 
     public BackgroundService() {
     }
@@ -75,12 +76,40 @@ public class BackgroundService extends Service implements LocationListener, IThr
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
+    private Location getLastKnownLocation() {
+        locationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
+        List<String> providers = locationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                //return 0;
+            }else{
+                //Location location = locationManager.getLastKnownLocation(provider);
+            }
+            Location l = locationManager.getLastKnownLocation(provider);
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                // Found best last known location: %s", l);
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "BackgroundService onCreate started");
 
-        //TODO: Pick up API token for the user
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
@@ -90,8 +119,6 @@ public class BackgroundService extends Service implements LocationListener, IThr
         Log.d(TAG,"BackgroundService onCreate ended");
 
         DownloadManager.getInstance().setThreadWakeUp(this);
-
-        //TODO: Requests to the server
     }
 
     @Override
@@ -99,15 +126,18 @@ public class BackgroundService extends Service implements LocationListener, IThr
         Log.d(TAG,"BackgroundService onStartCommand started");
         int settingsGpsRefreshTime = 10;
         apiKey = intent.getStringExtra("api");
-        miliseconds = intent.getLongExtra("miliseconds", 600000);
+        user = (User) intent.getSerializableExtra("user");
 
-        countDownTimer = new CountDownTimer(miliseconds, 1000) {
+        countDownTimer = new CountDownTimer(600000, 1000) {
+
+            long ticker = 0;
 
             public void onTick(long millisUntilFinished) {
-                miliseconds = millisUntilFinished;
-                if(millisUntilFinished / 1000 == 60)
-                    showNotification(2, "One minute left!");
-
+                ticker += 1000;
+                Log.d(TAG, String.valueOf(millisUntilFinished));
+                if(ticker % 10000 == 0){
+                    checkWifis();
+                }
             }
 
             public void onFinish() {
@@ -115,9 +145,6 @@ public class BackgroundService extends Service implements LocationListener, IThr
             }
         }.start();
 
-
-
-        locationManager.requestLocationUpdates(provider, settingsGpsRefreshTime *1000, 0, this); //Actual time to get a new location is a little big higher- 3s instead of 1, 6s instead 5, 12s instead 10
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // Consider calling
             //    ActivityCompat#requestPermissions
@@ -130,6 +157,7 @@ public class BackgroundService extends Service implements LocationListener, IThr
         }else{
             //Location location = locationManager.getLastKnownLocation(provider);
         }
+        locationManager.requestLocationUpdates(provider, settingsGpsRefreshTime * 1000, 0, this); //Actual time to get a new location is a little big higher- 3s instead of 1, 6s instead 5, 12s instead 10
         return START_NOT_STICKY;
     }
 
@@ -141,24 +169,35 @@ public class BackgroundService extends Service implements LocationListener, IThr
         super.onDestroy();
     }
 
+    public void checkWifis(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            //return 0;
+        }else{
+            //Location location = locationManager.getLastKnownLocation(provider);
+        }
+        Location loc = getLastKnownLocation();
+        if (isNetworkConnected()) {
+            System.gc();    //force garbage collector
+            currentLat = loc.getLatitude();
+            currentLon = loc.getLongitude();
+            DownloadManager.getInstance().locationWifis(apiKey, currentLat, currentLon);
+        }
+    }
+
     @Override
     public void onLocationChanged(Location location) {
-        if (isInternetAvailable() && isNetworkConnected()) {
+        if (isNetworkConnected()) {
             System.gc();    //force garbage collector
-            double myNewLat, myNewLon;
-            currentLat = (float) location.getLatitude();
-            currentLon = (float) location.getLongitude();
-
-            myNewLat = currentLat;
-            myNewLon = currentLon;
-
-            //TODO: Requests for the server
-
-            LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-            //DownloadManager.getInstance().addLocation((float)location.getLatitude(), (float)location.getLongitude(), apiKey);
-
-            /*DownloadManager.getInstance().getFriendsLocation(apiKey);*/
-
+            currentLat = location.getLatitude();
+            currentLon = location.getLongitude();
+            DownloadManager.getInstance().locationWifis(apiKey, currentLat, currentLon);
         }
     }
 
@@ -177,7 +216,7 @@ public class BackgroundService extends Service implements LocationListener, IThr
 
     }
 
-    public static float distanceBetween(float lat1, float lng1, float lat2, float lng2) {
+    public static double distanceBetween(double lat1, double lng1, double lat2, double lng2) {
         double earthRadius = 6371000; //meters
         double dLat = Math.toRadians(lat2-lat1);
         double dLng = Math.toRadians(lng2-lng1);
@@ -185,24 +224,13 @@ public class BackgroundService extends Service implements LocationListener, IThr
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                         Math.sin(dLng/2) * Math.sin(dLng/2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        float dist = (float) (earthRadius * c);
 
-        return dist;
+        return earthRadius * c;
     }
 
     private boolean isNetworkConnected() {
         final ConnectivityManager connectivityManager = ((ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE));
         return connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
-    }
-
-    public boolean isInternetAvailable() {
-        try {
-            InetAddress address = InetAddress.getByName("landmarkgo-d1a7c.firebaseio.com");
-            return !address.equals("");
-        } catch (UnknownHostException e) {
-            Toast.makeText(this, "Internet connection not available.", Toast.LENGTH_SHORT).show();
-        }
-        return false;
     }
 
     @Override
@@ -223,18 +251,21 @@ public class BackgroundService extends Service implements LocationListener, IThr
             }
             else {
                 try {
-                    JSONArray friends = new JSONArray(s);
-                    for(int i = 0; i < friends.length(); i++)
-                    {
-                        final JSONObject friend = friends.getJSONObject(i);
-                        double latitude = friend.getDouble("latitude");
-                        double longitude = friend.getDouble("longitude");
-                        Float distanceFromMarker = distanceBetween((float)currentLat,(float)currentLon,(float)latitude, (float)longitude);
-                        if(distanceFromMarker < NOTIFY_DISTANCE) {
-                           showNotification(1, friend.getString("name") + " is " + Math.round(distanceFromMarker) + " meters away from you!");
+                    JSONArray wifis = new JSONArray(s);
+                    boolean found = false;
+                    for(int i = 0; i < wifis.length(); i++){
+                        JSONObject wifi = wifis.getJSONObject(i);
+                        double lat = wifi.getDouble("latitude");
+                        double lon = wifi.getDouble("longitude");
+                        if(distanceBetween(currentLat, currentLon, lat, lon) < NOTIFY_DISTANCE){
+                            found = true;
                         }
                     }
-                } catch (JSONException e) {
+
+                    if(found){
+                        showNotification(1, "You have WiFi spots nearby!");
+                    }
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -253,29 +284,25 @@ public class BackgroundService extends Service implements LocationListener, IThr
                     .setPriority(Notification.PRIORITY_DEFAULT);
 
             // Creates an explicit intent for an Activity in your app
-            /*Intent resultIntent = new Intent(this, MyPlacesMapActivity.class);
+            Intent resultIntent = new Intent(this, SearchActivity.class);
             resultIntent.putExtra("api", apiKey);
-            resultIntent.putExtra("time_left", miliseconds);*/
+            resultIntent.putExtra("user", user);
 
             // The stack builder object will contain an artificial back stack for the started Activity.
             // This ensures that navigating backward from the Activity leads out of your application to the Home screen.
             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
             // Adds the back stack for the Intent (but not the Intent itself)
-            stackBuilder.addParentStack(MainActivity.class);
+            stackBuilder.addParentStack(Main2Activity.class);
             // Adds the Intent that starts the Activity to the top of the stack
-            //stackBuilder.addNextIntent(resultIntent);
+            stackBuilder.addNextIntent(resultIntent);
             PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
             mBuilder.setContentIntent(resultPendingIntent);
         }
 
-        if(uid==2){//landmark
+        if(uid==1){//wifi
             mBuilder
-                    .setSmallIcon(R.drawable.crne)
-                    .setContentTitle("Time is running out!");
-        }else{//friend
-            mBuilder
-                    .setSmallIcon(R.drawable.crne)
-                    .setContentTitle("You have friends nearby!");
+                    .setSmallIcon(R.drawable.wifi_icon)
+                    .setContentTitle("WiFinder");
         }
 
         mBuilder.setContentText(text);
@@ -308,10 +335,6 @@ public class BackgroundService extends Service implements LocationListener, IThr
         String ns = Context.NOTIFICATION_SERVICE;
         NotificationManager nMgr = (NotificationManager) ctx.getSystemService(ns);
         nMgr.cancel(notifyId);
-    }
-
-    public long getMiliseconds(){
-        return this.miliseconds;
     }
 
 

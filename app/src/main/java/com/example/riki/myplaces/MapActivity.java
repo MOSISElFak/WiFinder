@@ -16,6 +16,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -23,6 +24,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -64,6 +66,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private String apiKey;
     private int iterator;
     private Bitmap bmp;
+    private TextView points;
+    private User user;
     private ArrayList<WiFi> wiFis;
     private ArrayList<User> friendz;
     private boolean loadedWifis = false;
@@ -83,6 +87,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         apiKey = intent.getExtras().getString("api");
+        user = (User) intent.getSerializableExtra("user");
+
+        points = (TextView) findViewById(R.id.points);
+        points.setText("Points: " + user.points);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -221,6 +229,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 if (state == 4) {
                     try {
                         JSONObject wifi = new JSONObject(s);
+                        user.points += 10;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                points.setText("Points: " + user.points);
+                            }
+                        });
                         addWifiMarker(wifi);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -240,7 +255,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             map.setMapStyle(style);
         }
 
-        final CoordinatorLayout coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinator_layout);
+        final ConstraintLayout constraintLayout = (ConstraintLayout) findViewById(R.id.constraint_layout);
 
         addWifi = (FloatingActionButton) findViewById(R.id.addWiFi);
 
@@ -249,7 +264,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 selCoorsEnabled = true;
                 addWifi.setEnabled(false);
                 addWifi.setVisibility(View.INVISIBLE);
-                snackbar = Snackbar.make(coordinatorLayout, getString(R.string.safe_zone), Snackbar.LENGTH_INDEFINITE);
+                snackbar = Snackbar.make(constraintLayout, getString(R.string.safe_zone), Snackbar.LENGTH_INDEFINITE);
                 snackbar.show();
             }
         });
