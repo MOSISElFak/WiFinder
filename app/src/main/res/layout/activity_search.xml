@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:id="@+id/constraint_layout"
     tools:context="com.example.riki.myplaces.SearchActivity"
-    android:background="@color/colorBlack">
+    android:background="@color/colorPrimaryDark">
 
     <fragment
         android:id="@+id/map"

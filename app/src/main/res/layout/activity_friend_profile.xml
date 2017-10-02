@@ -94,11 +94,11 @@
         android:id="@+id/friendPhoto"
         android:layout_width="186dp"
         android:layout_height="167dp"
-        app:srcCompat="@drawable/friends"
-        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="67dp"
         app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@+id/imageViewSlika"
-        android:layout_marginTop="67dp" />
+        app:srcCompat="@drawable/friends" />
 
     <TextView
         android:id="@+id/lastNameFriend"

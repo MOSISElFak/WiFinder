@@ -30,7 +30,7 @@ public class AddWifiActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(dm);
         int width = dm.widthPixels;
         int height = dm.heightPixels;
-        getWindow().setLayout((int) (width * 0.9), (int) (height * 0.65));
+        getWindow().setLayout((int) (width * 0.9), (int) (height * 0.435));
 
         name = (EditText) findViewById(R.id.name);
         password = (EditText) findViewById(R.id.password);

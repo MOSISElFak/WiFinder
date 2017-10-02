@@ -190,7 +190,8 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
                             data.getString("phone_number"),
                             data.getDouble("latitude"),
                             data.getDouble("longitude"),
-                            data.getInt("points")
+                            data.getInt("points"),
+                            data.getString("avatar")
                     );
 
                 } catch (JSONException e){

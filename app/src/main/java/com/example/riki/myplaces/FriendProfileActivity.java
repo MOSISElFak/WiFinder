@@ -25,8 +25,10 @@ import java.io.InputStream;
 
 public class FriendProfileActivity extends AppCompatActivity {
     String apiKey;
-    String frname, frlastn, fremail, frphone,frurl,frpoints;
+    String frname, frlastn, fremail, frphone,frurl;
     TextView name1,lastname1,phone1,email1,points1;
+    int frpoints;
+    ImageView friendPhoto;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +47,7 @@ public class FriendProfileActivity extends AppCompatActivity {
         fremail = intent.getExtras().getString("email");
         frphone = intent.getExtras().getString("phone");
         frurl = intent.getExtras().getString("url");
-        frpoints = intent.getExtras().getString("points");
+        frpoints = intent.getExtras().getInt("points");
         //DownloadManager.getInstance().setThreadWakeUp(this);
 
         name1 = (TextView) findViewById(R.id.nameFriend);
@@ -53,15 +55,37 @@ public class FriendProfileActivity extends AppCompatActivity {
         email1 = (TextView) findViewById(R.id.emailFriend);
         phone1 = (TextView) findViewById(R.id.phoneFriend);
         points1 = (TextView) findViewById(R.id.pointsFriend);
+        friendPhoto = (ImageView) findViewById(R.id.friendPhoto);
 
-        name1.setText(frname);
-        lastname1.setText(frlastn);
-        email1.setText(fremail);
-        phone1.setText(frphone);
-        points1.setText(frpoints);
+        if(!frname.equals("null")){
+            name1.setText("First name: " + frname);
+        } else {
+            name1.setText("First name: ");
+        }
+
+        if(!frlastn.equals("null")){
+            lastname1.setText("Last name: " + frlastn);
+        } else {
+            lastname1.setText("Last name: ");
+        }
+
+        if(!fremail.equals("null")){
+            email1.setText("Email: " + fremail);
+        } else {
+            email1.setText("Email: ");
+        }
+
+        if(!frphone.equals("null")){
+            phone1.setText("Phone: " + frphone);
+        } else {
+            phone1.setText("Phone: ");
+        }
+
+        points1.setText("Points: " + String.valueOf(frpoints));
+
         if (frurl != "null") {
             new FriendProfileActivity.DownloadImageTask((ImageView) findViewById(R.id.friendPhoto))
-                    .execute("https://zmurke.herokuapp.com" + frurl);
+                    .execute("https://wi-finder-server.herokuapp.com" + frurl);
         }
        /* if (apiKey != null) {
 

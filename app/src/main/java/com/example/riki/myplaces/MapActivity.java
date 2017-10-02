@@ -23,6 +23,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -46,7 +47,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Random;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, IThreadWakeUp {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, IThreadWakeUp, GoogleMap.OnMarkerClickListener {
 
     static final int ENTER_WIFI_DETAILS = 1;  // The request code
 
@@ -55,6 +56,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     LocationManager locationManager;
 
     private boolean selCoorsEnabled = false;
+    private boolean hasPassword = false;
     private FloatingActionButton addWifi;
     private int state = 0;
     private int timer = 0;
@@ -63,6 +65,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private int iterator;
     private Bitmap bmp;
     private ArrayList<WiFi> wiFis;
+    private ArrayList<User> friendz;
     private boolean loadedWifis = false;
     private double selectedLatitude;
     private double selecteLongitude;
@@ -75,6 +78,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         DownloadManager.getInstance().setThreadWakeUp(this);
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        friendz = new ArrayList<User>();
 
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
@@ -157,7 +161,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                     wifi.getString("password"),
                                     wifi.getDouble("latitude"),
                                     wifi.getDouble("longitude"),
-                                    wifi.getInt("created_by")
+                                    wifi.getInt("created_by"),
+                                    wifi.getString("user")
                             );
                             wiFis.add(wiFi);
                         }
@@ -166,6 +171,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             public void run() {
                                 addWiFis();
                                 loadedWifis = true;
+                                /*state = 2;
+                                DownloadManager.getInstance().getFriends(apiKey);*/
                             }
                         });
                     } catch (Exception e) {
@@ -175,12 +182,26 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                 if (state == 2 || state == 3) {
                     try {
+                        friendz.clear();
                         JSONArray friends = new JSONArray(s);
                         for (int i = 0; i < friends.length(); i++) {
                             final JSONObject friend = friends.getJSONObject(i);
                             String lat = friend.getString("latitude");
                             String lon = friend.getString("longitude");
-                            if (lat != null || lon != null) {
+                            if (!lat.equals("null") && !lon.equals("null")) {
+                                User fr = new User(
+                                        friend.getInt("id"),
+                                        friend.getString("name"),
+                                        friend.getString("first_name"),
+                                        friend.getString("last_name"),
+                                        friend.getString("email"),
+                                        friend.getString("phone_number"),
+                                        friend.getDouble("latitude"),
+                                        friend.getDouble("longitude"),
+                                        friend.getInt("points"),
+                                        friend.getString("avatar")
+                                );
+                                friendz.add(fr);
                                 Bitmap bmp;
                                 if (!friend.getString("avatar").equals("default.jpg")) {
                                     URL url = new URL("https://wi-finder-server.herokuapp.com/" + friend.getString("avatar"));
@@ -250,6 +271,41 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
 
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                if (marker.getTag().equals("wifi")) {
+                    for (int i = 0; i < wiFis.size(); i++) {
+                        if (wiFis.get(i).equals(marker.getTitle())) {
+                            Intent intent = new Intent(MapActivity.this, ViewWifiActivity.class);
+                            intent.putExtra("name", wiFis.get(i).name);
+                            intent.putExtra("password", wiFis.get(i).password);
+                            intent.putExtra("createdBy", wiFis.get(i).user);
+                            startActivity(intent);
+                        }
+                    }
+                } else {
+                    Intent intent = new Intent(MapActivity.this, FriendProfileActivity.class);
+                    for (int i = 0; i < friendz.size(); i++) {
+                        if (friendz.get(i).equals(marker.getTitle())) {
+                            intent.putExtra("api", apiKey);
+                            intent.putExtra("fname", friendz.get(i).firstName);
+                            intent.putExtra("lname", friendz.get(i).lastName);
+                            intent.putExtra("email", friendz.get(i).email);
+                            intent.putExtra("phone", friendz.get(i).phoneNumber);
+                            intent.putExtra("url", friendz.get(i).avatar);
+                            intent.putExtra("points", friendz.get(i).points);
+                            startActivity(intent);
+                        }
+                    }
+
+
+                }
+
+                return true;
+            }
+        });
+
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) ==
@@ -280,9 +336,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 if (data.hasExtra("password")) {
                     String password = data.getStringExtra("password");
                     state = 4;
+                    hasPassword = true;
                     DownloadManager.getInstance().addWifi(apiKey, name, password, selectedLatitude, selecteLongitude);
                 } else {
                     state = 4;
+                    hasPassword = false;
                     DownloadManager.getInstance().addWifi(apiKey, name, null, selectedLatitude, selecteLongitude);
                 }
             }
@@ -294,15 +352,28 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             String lat = wifi.getString("latitude");
             String lon = wifi.getString("longitude");
             String name = wifi.getString("name");
-
-            WiFi wiFi = new WiFi(
-                wifi.getInt("id"),
-                    wifi.getString("name"),
-                    wifi.getString("password"),
-                    wifi.getDouble("latitude"),
-                    wifi.getDouble("longitude"),
-                    wifi.getInt("created_by")
-            );
+            WiFi wiFi = null;
+            if(hasPassword){
+                wiFi = new WiFi(
+                        wifi.getInt("id"),
+                        wifi.getString("name"),
+                        wifi.getString("password"),
+                        wifi.getDouble("latitude"),
+                        wifi.getDouble("longitude"),
+                        wifi.getInt("created_by"),
+                        wifi.getString("user")
+                );
+            } else {
+                wiFi = new WiFi(
+                        wifi.getInt("id"),
+                        wifi.getString("name"),
+                        "null",
+                        wifi.getDouble("latitude"),
+                        wifi.getDouble("longitude"),
+                        wifi.getInt("created_by"),
+                        wifi.getString("user")
+                );
+            }
 
             wiFis.add(wiFi);
 
@@ -323,7 +394,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             .radius(50)
                             .strokeWidth(0f)
                             .fillColor(Color.argb(120, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))));
-                    map.addMarker(markerOptions);
+                    Marker marker = map.addMarker(markerOptions);
+                    Toast.makeText(MapActivity.this, "Nice! You got 10 points for adding a new Wifi spot!", Toast.LENGTH_SHORT).show();
+                    marker.setTag("wifi");
                 }
             });
         } catch (JSONException e) {
@@ -356,8 +429,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     public void run() {
                         //stuff that updates ui
                         Marker marker = map.addMarker(markerOptions);
-                        markerPlaceIdMap.put(marker, iterator);
-                        iterator++;
+                        marker.setTag("friend");
+                        /*markerPlaceIdMap.put(marker, iterator);
+                        iterator++;*/
                     }
                 });
             }
@@ -388,9 +462,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             Bitmap bmp = ((BitmapDrawable) wifiPin).getBitmap();
             markerOptions.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmp, 75, 100, false)));
             markerOptions.title(wiFis.get(i).name);
-            map.addMarker(markerOptions);
+            Marker marker = map.addMarker(markerOptions);
+            marker.setTag("wifi");
         }
     }
 
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        return true;
+    }
 }

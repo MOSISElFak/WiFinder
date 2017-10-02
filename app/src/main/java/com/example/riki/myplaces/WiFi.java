@@ -10,13 +10,14 @@ public class WiFi  implements Serializable
     public double latitude;
     public double longitude;
     public int createdBy;
+    public String user;
 
     public WiFi()
     {
 
     }
 
-    public WiFi(int id, String name, String password, double latitude, double longitude, int createdBy)
+    public WiFi(int id, String name, String password, double latitude, double longitude, int createdBy, String user)
     {
         this.id = id;
         this.name = name;
@@ -24,5 +25,20 @@ public class WiFi  implements Serializable
         this.latitude = latitude;
         this.longitude = longitude;
         this.createdBy = createdBy;
+        this.user = user;
+    }
+
+    @Override
+    public boolean equals (Object object) {
+        boolean result = false;
+        if (object == null || object.equals("")) {
+            result = false;
+        } else {
+            String name = String.valueOf(object);
+            if (this.name.equals(name)) {
+                result = true;
+            }
+        }
+        return result;
     }
 }
