@@ -48,7 +48,6 @@ import java.util.List;
 public class Friendz extends AppCompatActivity implements IThreadWakeUp {
 
     //stari friends
-
     ArrayList<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
     String apiKey;
@@ -58,22 +57,20 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
     boolean alreadyFriend = false;
     int brojPrijatelja;
     int niz[];
-    public static final String FRIEND_REQUEST_CODE = "MONUMENTS_GO_FRIEND_REQUEST_";
-    private static final int BT_DISCOVERABLE_TIME = 1200;
-    private static final int ADD_POINTS_NEW_FRIEND = 5;
-    ProgressBar pb;
+    private static final int BT_DISCOVERABLE_TIME = 240;
     public static final int REQUEST_CODE_LOC = 10;
+
     @Override
     @TargetApi(Build.VERSION_CODES.M)
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "MainActivity: onCreate started");
         setContentView(R.layout.activity_friendz);
 
         listItems.add("Friends");
 
         final Intent intent = getIntent();
         apiKey = intent.getExtras().getString("api");
+
         DownloadManager.getInstance().setThreadWakeUp(this);
 
 
@@ -104,7 +101,6 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
         niz = new int[100];
         DownloadManager.getInstance().getFriends(apiKey);
         DownloadManager.getInstance().getUser(apiKey);
-
         final Animation animation = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.alpha);
 
         final ImageView exit = (ImageView) findViewById(R.id.cancelButton);
@@ -128,37 +124,11 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
         });
 
 
-
-
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fabAddNewFriend);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                /*if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
-                        PackageManager.PERMISSION_GRANTED &&
-                        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
-                                PackageManager.PERMISSION_GRANTED &&
-                        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
-                                PackageManager.PERMISSION_GRANTED &&
-                        checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) ==
-                                PackageManager.PERMISSION_GRANTED &&
-                        checkSelfPermission(Manifest.permission.VIBRATE) ==
-                                PackageManager.PERMISSION_GRANTED
-                        ) {*/
-
-
-               /* requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        1);
-                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        1);
-                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        1);
-                requestPermissions(new String[]{Manifest.permission.BLUETOOTH_ADMIN},
-                        1);
-                requestPermissions(new String[]{Manifest.permission.VIBRATE},
-                        1);*/
 
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
 
@@ -181,40 +151,15 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
                 }
                 }
 
+                  //  Snackbar.make(view, "Wait for incoming friend request or send one.", Snackbar.LENGTH_LONG).setAction("Action", null).show();
 
-
-
-
-                    Snackbar.make(view, "Wait for incoming friend request or send one.", Snackbar.LENGTH_LONG).setAction("Action", null).show();
-
-                    bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                    if (bluetoothAdapter == null) {
+                bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                if (bluetoothAdapter == null) {
                         Toast.makeText(Friendz.this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
                         //finish();
                         return;
                     }
-                    ensureDiscoverable(bluetoothAdapter);   //onActivityResult checks if discoverability in enabled and then sends friend request
-                /*} else {
-                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                            1);
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                            1);
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                            1);
-                    requestPermissions(new String[]{Manifest.permission.BLUETOOTH_ADMIN},
-                            1);
-                    requestPermissions(new String[]{Manifest.permission.VIBRATE},
-                            1);
-                    Snackbar.make(view, "Wait for incoming friend request or send one.", Snackbar.LENGTH_LONG).setAction("Action", null).show();
-                    bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                    if (bluetoothAdapter == null) {
-                        Toast.makeText(Friendz.this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
-                        //finish();
-                        return;
-                    }
-                    ensureDiscoverable(bluetoothAdapter);   //onActivityResult checks if discoverability in enabled and then sends friend request
-
-                }*/
+                ensureDiscoverable(bluetoothAdapter);
             }
         });
     }
@@ -272,12 +217,7 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
     private static final int REQUEST_ENABLE_BT = 3;
 
-    private ListView lvMainChat;
-    private EditText etMain;
-    private Button btnSend;
-
     private String connectedDeviceName = null;
-    //private ArrayAdapter<String> chatArrayAdapter;
 
     private StringBuffer outStringBuffer;
     private BluetoothAdapter bluetoothAdapter = null;
@@ -314,9 +254,6 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
                     byte[] writeBuf = (byte[]) msg.obj;
 
                     String writeMessage = new String(writeBuf);
-                   // Toast.makeText(getApplicationContext(), "wRITE MSG" + writeMessage, Toast.LENGTH_LONG).show();
-
-                    //chatArrayAdapter.add("Me:  " + writeMessage);
                     break;
                 case MESSAGE_READ:
                     Log.d(TAG, "MainActivity: handleMessage MESSAGE_READ");
@@ -324,37 +261,28 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
 
                     String readMessage = new String(readBuf, 0, msg.arg1);
 
-                    //Toast.makeText(getApplicationContext(), "Write sta pa mi saljemo" + readMessage, Toast.LENGTH_LONG).show();
+                    
                     Log.d(TAG, "readMessage:" + readMessage);
-                    //Toast.makeText(Friends.this, ""+ readMessage, Toast.LENGTH_LONG).show();
+
 
                     final String message = readMessage;
 
                     int _char = message.lastIndexOf("_");
                     String messageCheck = message.substring(0, _char + 1);
                     final String friendsUid = message.substring(_char + 1);
-                    Log.d(TAG, "TEMP messageCheck:" + messageCheck); //messageCheck:MONUMENTS_GO_FRIEND_REQUEST_
-                    Log.d(TAG, "TEMP friendsUid:" + friendsUid);
-                    Log.d(TAG, "TEMP FRIEND_REQUEST_CODE:" + FRIEND_REQUEST_CODE);//FRIEND_REQUEST_CODE:MONUMENTS_GO_FRIEND_REQUEST_
-                 /*   if (messageCheck.equals(FRIEND_REQUEST_CODE)) {
-                        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-                        v.vibrate(500);
-                        */
+
 
                         runOnUiThread(new Runnable() {
                             public void run() {
                                 new AlertDialog.Builder(Friendz.this)
-                                        .setTitle("Confirm friend request")
+                                        .setTitle("FRIEND REQUEST")
                                         .setMessage("Are you sure you want to become friends with a device " + connectedDeviceName + "?")
                                         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                                             public void onClick(DialogInterface dialog, int which) {
 
-
-
                                                 int idReceive = Integer.parseInt(message);
                                                 contains(niz,idReceive);
 
-                                                //NE RADI DOBRO
 
                                                 if(contains(niz,idReceive)){
                                                     Toast.makeText(Friendz.this, "You are already friends", Toast.LENGTH_LONG).show();
@@ -362,7 +290,12 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
                                                 else {
                                                     alreadyFriend = true;
                                                     DownloadManager.getInstance().addFriend(idReceive, apiKey);
-                                                    Toast.makeText(Friendz.this, "You made a new friend!", Toast.LENGTH_LONG).show();
+                                                    Toast.makeText(Friendz.this, "Well done, you made a new friend!", Toast.LENGTH_LONG).show();
+                                                    alreadyFriend = true;
+                                                    DownloadManager.getInstance().addPoints(apiKey,5);
+
+                                                    Toast.makeText(Friendz.this, "You got 5 points!", Toast.LENGTH_LONG).show();
+
                                                 }
 
                                                 adapter.notifyDataSetChanged();
@@ -396,8 +329,7 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
     });
 
     public boolean contains(final int [] array, final int key) {
-       // Arrays.sort(array);
-       // return Arrays.binarySearch(array, key) >= 0;
+
     boolean yes = false;
         for(int i=0; i<100;i++)
         {
@@ -451,7 +383,6 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        //inflater.inflate(R.menu.option_menu, menu);
         return true;
     }
 
@@ -462,27 +393,23 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
     }
 
     private void ensureDiscoverable(BluetoothAdapter bluetoothAdapter) {
-        Log.d(TAG, "MainActivity: ensureDiscoverable started");
-        //if (bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) { //this must be commented because then onActivityResult is not called when BT is enabled before enterin Friends activity
+
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, BT_DISCOVERABLE_TIME);
         startActivityForResult(discoverableIntent, REQUEST_ENABLE_BT);
-        //}
+
     }
 
     private void sendMessage(String message) {
-        Log.d(TAG, "MainActivity: sendMessage started");
+
         if (chatService.getState() != ChatService.STATE_CONNECTED) {
-            //Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (message.length() > 0) {
             byte[] send = message.getBytes();
             chatService.write(send);
-
             outStringBuffer.setLength(0);
-            //etMain.setText(outStringBuffer);
         }
     }
 
@@ -497,22 +424,9 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
         }
     };
 
-    private final void setStatus(int resId) {
-        Log.d(TAG, "MainActivity: setStatus1 started");
-        final ActionBar actionBar = getSupportActionBar();
-//        actionBar.setSubtitle(resId);
-    }
-
-    private final void setStatus(CharSequence subTitle) {
-        Log.d(TAG, "MainActivity: setStatus2 started");
-        final ActionBar actionBar = getSupportActionBar();
-        actionBar.setSubtitle(subTitle);
-    }
 
     private boolean setupChat() {
         Log.d(TAG, "MainActivity: setupChat started");
-        //chatArrayAdapter = new ArrayAdapter<String>(this, R.layout.message);
-        //lvMainChat.setAdapter(chatArrayAdapter);
 
         chatService = new ChatService(this, handler);
 
@@ -526,7 +440,6 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
 
     // BITNO!!!
     private void sendFriendRequest() {
-        String message1 = FRIEND_REQUEST_CODE + "Bla bla";
         String message = idUser;
         Log.d(TAG, "MainActivity: addNewFriend sendingMessage:" + message);
         sendMessage(message);
@@ -542,13 +455,7 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
     public synchronized void onResume() {
         super.onResume();
         Log.d(TAG, "MainActivity: onResume started");
-        /*
-        if (chatService != null) {
-            if (chatService.getState() == ChatService.STATE_NONE) {
-                chatService.start();
-            }
-        }
-        */
+
     }
 
     @Override
@@ -593,6 +500,7 @@ public class Friendz extends AppCompatActivity implements IThreadWakeUp {
                 });
             } else {
                 try {
+
             if(!alreadyFriend){
                     if (ok) {
                         runOnUiThread(new Runnable() {

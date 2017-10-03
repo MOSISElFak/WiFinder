@@ -1,6 +1,7 @@
 package com.example.riki.myplaces;
 
 import java.io.Serializable;
+import java.util.Comparator;
 
 
 public class User implements Serializable{
@@ -34,6 +35,13 @@ public class User implements Serializable{
         this.avatar = avatar;
     }
 
+    public User(String name, int points)
+    {
+        this.name = name;
+        this.points = points;
+
+    }
+
     @Override
     public boolean equals (Object object) {
         boolean result = false;
@@ -47,4 +55,24 @@ public class User implements Serializable{
         }
         return result;
     }
+    public int getPoints(){
+        return points;
+    }
+
+
+    public static Comparator<User> FruitNameComparator
+            = new Comparator<User>() {
+
+        public int compare(User fruit1, User fruit2) {
+
+            int fruitName1 = fruit1.points;
+            int fruitName2 = fruit2.points;
+            //ascending order
+            return fruitName1 - fruitName2;
+
+            //descending order
+            //return fruitName2.compareTo(fruitName1);
+        }
+
+    };
 }

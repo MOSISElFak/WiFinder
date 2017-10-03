@@ -449,7 +449,7 @@ public class ProfileActivity extends AppCompatActivity implements IThreadWakeUp 
             //ako nije ni tada, onda treba nekako obezbediti da ne pukne aplikacija
             //ispisati poruku da je doslo do greske na serveru, to samo ako 2 puta ne dobijemo nista
             //promenljiva koja to obezbedjuje
-            Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Registration successfulzzz!", Toast.LENGTH_SHORT).show();
         } else {
             String html = "<!DOCTYPE html>";
             if (s.toLowerCase().contains(html.toLowerCase())) {

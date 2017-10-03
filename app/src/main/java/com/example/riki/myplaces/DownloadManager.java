@@ -262,6 +262,29 @@ public class DownloadManager {
         t.start();
     }
 
+
+    public void getUserFriends(final String apiToken)
+    {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Request request = new Request.Builder()
+                            .url("https://wi-finder-server.herokuapp.com/api/user_friends")
+                            .addHeader("api", apiToken)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String s = response.body().string();
+                    wakeUp.ResponseOk(s);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.start();
+    }
+
     public void locationFriends(final String apiToken, final double latitude, final double longitude)
     {
         Thread t = new Thread(new Runnable() {
