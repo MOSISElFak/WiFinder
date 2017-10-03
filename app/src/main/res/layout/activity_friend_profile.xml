@@ -71,7 +71,7 @@
         android:id="@+id/imageViewSlika"
         android:layout_width="199dp"
         android:layout_height="52dp"
-        app:srcCompat="@drawable/crne"
+        app:srcCompat="@drawable/internet"
         tools:layout_editor_absoluteY="6dp"
         app:layout_constraintRight_toLeftOf="@+id/toolbarProfile"
         app:layout_constraintLeft_toRightOf="@+id/toolbarProfile"

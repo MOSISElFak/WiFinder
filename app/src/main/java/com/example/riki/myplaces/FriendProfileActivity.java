@@ -25,7 +25,7 @@ import java.io.InputStream;
 
 public class FriendProfileActivity extends AppCompatActivity {
     String apiKey;
-    String frname, frlastn, fremail, frphone,frurl;
+    String frname, frlastn, fremail, frphone,frurl, frp;
     TextView name1,lastname1,phone1,email1,points1;
     int frpoints;
     ImageView friendPhoto;
@@ -47,7 +47,7 @@ public class FriendProfileActivity extends AppCompatActivity {
         fremail = intent.getExtras().getString("email");
         frphone = intent.getExtras().getString("phone");
         frurl = intent.getExtras().getString("url");
-        frpoints = intent.getExtras().getInt("points");
+        frp = intent.getExtras().getString("points");
         //DownloadManager.getInstance().setThreadWakeUp(this);
 
         name1 = (TextView) findViewById(R.id.nameFriend);
@@ -58,30 +58,30 @@ public class FriendProfileActivity extends AppCompatActivity {
         friendPhoto = (ImageView) findViewById(R.id.friendPhoto);
 
         if(!frname.equals("null")){
-            name1.setText("First name: " + frname);
+            name1.setText("First name: \n" + frname);
         } else {
             name1.setText("First name: ");
         }
 
         if(!frlastn.equals("null")){
-            lastname1.setText("Last name: " + frlastn);
+            lastname1.setText("Last name: \n" + frlastn);
         } else {
             lastname1.setText("Last name: ");
         }
 
         if(!fremail.equals("null")){
-            email1.setText("Email: " + fremail);
+            email1.setText("Email: \n" + fremail);
         } else {
             email1.setText("Email: ");
         }
 
         if(!frphone.equals("null")){
-            phone1.setText("Phone: " + frphone);
+            phone1.setText("Phone: \n" + frphone);
         } else {
             phone1.setText("Phone: ");
         }
 
-        points1.setText("Points: " + String.valueOf(frpoints));
+        points1.setText("Points: " + frp);
 
         if (frurl != "null") {
             new FriendProfileActivity.DownloadImageTask((ImageView) findViewById(R.id.friendPhoto))

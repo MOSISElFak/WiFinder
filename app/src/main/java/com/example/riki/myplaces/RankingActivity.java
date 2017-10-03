@@ -15,15 +15,23 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
+import com.example.riki.myplaces.User;
 public class RankingActivity extends AppCompatActivity implements IThreadWakeUp {
 
     ArrayList<String> listItems = new ArrayList<String>();
+    ArrayList<User> useri = new ArrayList<User>();
     ArrayList<String> listNum = new ArrayList<String>();
-    ArrayAdapter<String> adapter ,adapterHiden;
+    ArrayAdapter<String> adapter1;
+    ArrayAdapter<String> adapterHiden;
     String apiKey;
-    String idUser;
+    String idUser,pointsUser,nameUser;
+    int popointsUser;
+   // User Ouruser[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,12 +39,18 @@ public class RankingActivity extends AppCompatActivity implements IThreadWakeUp 
         setContentView(R.layout.activity_rank);
         final Intent intent = getIntent();
         apiKey = intent.getExtras().getString("api");
-      //  idUser = intent.getExtras().getString("id");
-        listNum.add("hihi");
+        idUser = String.valueOf(intent.getExtras().getString("id"));
+        nameUser = intent.getExtras().getString("name");
+        popointsUser = intent.getExtras().getInt("points");
+
+     //   listNum.add("hihi");
+    //    listItems.add( popointsUser + " points "+ "                      :                       " + nameUser);
+
+
+
 
         DownloadManager.getInstance().setThreadWakeUp(this);
 
-        //ListView number = (ListView) findViewById(R.id.rankListid);
         ListView friends = (ListView) findViewById(R.id.rankList);
         friends.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -58,28 +72,15 @@ public class RankingActivity extends AppCompatActivity implements IThreadWakeUp 
 
         adapterHiden = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_2, listNum);
 
-        adapter=new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listItems);
+        adapter1 = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listItems);
 
-     /*   Collections.sort(listItems);
-        Collections.reverse(listItems);*/
+       // adapter = new ArrayAdapter<User>(this, android.R.layout.simple_list_item_1, useri);
 
-        friends.setAdapter(adapter);
-        // number.setAdapter(adapterHiden);
+        friends.setAdapter(adapter1);
 
-        DownloadManager.getInstance().getFriends(apiKey);
 
-      /*  final Button fab = (Button) findViewById(R.id.button5);
-        fab.setOnClickListener(new View.OnClickListener() {
+        DownloadManager.getInstance().getUserFriends(apiKey);
 
-            public void onClick(View v) {
-                //  logOut.startAnimation(animation);
-                Intent intent = new Intent(RankingActivity.this, HelpActivity.class);
-                //intent.putExtra("id",idUser);
-                startActivity(intent);
-
-            }
-        });
-*/
     }
 
 
@@ -108,38 +109,76 @@ public class RankingActivity extends AppCompatActivity implements IThreadWakeUp 
             else {*/
             try {
 
+                 final Comparator<User> DESCENDING_COMPARATOR = new Comparator<User>() {
+                    // Overriding the compare method to sort the age
+                    public int compare(User d, User d1) {
+                        return d.points - d1.points;
+                    }
+                };
 
+                final Comparator<User> comparator = new Comparator<User>(){
 
+                    public int compare(User emp1, User emp2) {
+                        return (emp1.points - emp2.points);
+                    }
+
+                };
 
                 final JSONArray friends = new JSONArray(s);
                 JSONObject[] elements = new JSONObject[friends.length()];
                 final String[] names = new String[friends.length()];
                 final String[] id = new String[friends.length()];
-                final String[] points = new String[friends.length()];
+                final int[] points = new int[friends.length()];
+                final User[] OurUser = new User[friends.length()];
+                String val[] = new String[friends.length()];
 
                 for (int i = 0; i < friends.length(); i++) {
                     elements[i] = friends.getJSONObject(i);
                     names[i] = elements[i].getString("name");
                     id[i] = elements[i].getString("id");
-                    points[i] = elements[i].getString("points");
+                    points[i] = elements[i].getInt("points");
                     final int iterator = i;
+
+                    OurUser[i] = new User(
+                            names[i],
+                            points[i]
+                    );
+
+                    useri.add(OurUser[i]);
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            //stuff that updates ui
-                            //  if(Integer.parseInt(points[iterator]) > Integer.parseInt(points[iterator+1]))
 
-                            listItems.add( points[iterator]+ " points "+ "                      :                       " + names[iterator]);
-                            //listNum.add(String.valueOf(iterator));
 
                             Collections.sort(listItems);
                             Collections.reverse(listItems);
 
-                            adapter.notifyDataSetChanged();
+                            adapter1.notifyDataSetChanged();
                         }
                     });
                 }
+
+               useri = bubbleSort(useri);
+               // adapter.notifyDataSetChanged();
+
+                for(int i=0;i<friends.length();i++ ){
+                    final int iterator = i;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            int a = useri.get(iterator).points;
+                            String b = useri.get(iterator).name;
+                            listItems.add(b + " has " + a + " points");
+                            adapter1.notifyDataSetChanged();
+                        }
+                    });
+
+                }
+
+
+
 
 
             } catch (JSONException e) {
@@ -152,4 +191,34 @@ public class RankingActivity extends AppCompatActivity implements IThreadWakeUp 
     }
 
 
+
+    public static ArrayList<User> bubbleSort(ArrayList<User> numArray) {
+
+        int n = numArray.size();
+        User temp = null;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 1; j < (n - i); j++) {
+
+                if (numArray.get(j-1).points < numArray.get(j).points) {
+                    temp = numArray.get(j-1);
+                    numArray.set(j-1,numArray.get(j));
+                    numArray.set(j,temp);
+                }
+            }
+        }
+        return numArray;
+    }
+
+    public final class UserComparator implements Comparator<User> {
+
+        public int compareTo(User d1, User d2) {
+            return d1.points - d2.points;
+        }
+
+        @Override
+        public int compare(User o1, User o2) {
+            return o1.points - o2.points;
+        }
+    }
 }

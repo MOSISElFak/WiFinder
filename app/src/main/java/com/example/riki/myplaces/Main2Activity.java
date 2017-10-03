@@ -9,6 +9,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
@@ -25,6 +26,7 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
     boolean clickEnabled;
     User user;
     String ajdi;
+    ImageView v,v1,v2,v3,v4,v5;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,8 +34,11 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
         Intent intent = getIntent();
         final Bundle extras = intent.getExtras();
         final String apiKey = intent.getExtras().getString("api");
+        ajdi = apiKey;
         clickEnabled = true;
         DownloadManager.getInstance().setThreadWakeUp(this);
+
+
 
         if (getIntent().getBooleanExtra("EXIT", false)) {
 
@@ -72,7 +77,7 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
 
         final Animation animation = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.alpha);
 
-        final ImageView v = (ImageView) findViewById(R.id.imageViewMap);
+        v = (ImageView) findViewById(R.id.imageViewMap);
         v.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -84,7 +89,8 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
             }
         });
 
-        final ImageView v1 = (ImageView) findViewById(R.id.imageViewHelp);
+        v.setEnabled(false);
+        v1 = (ImageView) findViewById(R.id.imageViewHelp);
         v1.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -96,7 +102,8 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
             }
         });
 
-        final ImageView v2 = (ImageView) findViewById(R.id.imageViewProfile);
+        v1.setEnabled(false);
+        v2 = (ImageView) findViewById(R.id.imageViewProfile);
         v2.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -106,8 +113,8 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
                 startActivity(intent);
             }
         });
-
-        final ImageView v3 = (ImageView) findViewById(R.id.imageViewPlay);
+        v2.setEnabled(false);
+        v3 = (ImageView) findViewById(R.id.imageViewPlay);
         v3.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -118,22 +125,23 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
                 startActivity(intent);
             }
         });
-
-        final ImageView v4 = (ImageView) findViewById(R.id.imageViewRank);
+        v3.setEnabled(false);
+        v4 = (ImageView) findViewById(R.id.imageViewRank);
         v4.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
                 v4.startAnimation(animation);
-                //String a = String.valueOf(user.id);
                 Intent intent = new Intent(Main2Activity.this,RankingActivity.class);
                 intent.putExtra("api",apiKey);
-                //intent.putExtra("id",ajdi);
+                intent.putExtra("id",user.id);
+                intent.putExtra("points",user.points);
+                intent.putExtra("name",user.name);
                 startActivity(intent);
 
             }
         });
-
-        final ImageView v5 = (ImageView) findViewById(R.id.imageViewFriends);
+        v4.setEnabled(false);
+       v5 = (ImageView) findViewById(R.id.imageViewFriends);
         v5.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
@@ -144,6 +152,16 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
                 startActivity(intent);
             }
         });
+        v5.setEnabled(false);
+/*
+        v.setEnabled(false);
+        v1.setEnabled(false);
+        v2.setEnabled(false);
+        v3.setEnabled(false);
+        v4.setEnabled(false);
+        v5.setEnabled(false);
+*/
+
 
         DownloadManager.getInstance().getUser(apiKey);
     }
@@ -180,7 +198,31 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
             }
             else {
                 try{
+
+
+
+
                     JSONObject data = new JSONObject(s);
+                    String lat = data.getString("latitude");
+                    String longi = data.getString("latitude");
+                    double latitude1, longitude1;
+                    if(lat.equals("null"))
+                    {
+                        latitude1= 0;
+                    }
+                    else
+                    {
+                        latitude1 =  Double.parseDouble(lat);
+                    }
+                    if (longi.equals("null"))
+                    {
+                        longitude1 = 0;
+                    }
+                    else
+                    {
+                        longitude1 = Double.parseDouble(longi);
+                    }
+
                     user = new User(
                             data.getInt("id"),
                             data.getString("name"),
@@ -188,11 +230,26 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
                             data.getString("last_name"),
                             data.getString("email"),
                             data.getString("phone_number"),
-                            data.getDouble("latitude"),
-                            data.getDouble("longitude"),
+                            latitude1,
+                            longitude1,
                             data.getInt("points"),
                             data.getString("avatar")
                     );
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            v.setEnabled(true);
+                            v1.setEnabled(true);
+                            v2.setEnabled(true);
+                            v3.setEnabled(true);
+                            v4.setEnabled(true);
+                            v5.setEnabled(true);
+                        }
+                    });
+
+
 
                 } catch (JSONException e){
                     e.printStackTrace();
@@ -214,6 +271,10 @@ public class Main2Activity extends AppCompatActivity implements IThreadWakeUp {
 //            }
 //        });
 
+@Override
+    public synchronized void onResume() {
+        super.onResume();
+       DownloadManager.getInstance().getUser(ajdi);
 
-
+    }
 }
